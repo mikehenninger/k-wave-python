@@ -5,8 +5,8 @@ from math import ceil
 from typing import Optional
 
 import numpy as np
-import numpy.linalg as linalg
-from numpy import arcsin, array, cos, pi, size
+#import numpy.linalg as linalg
+#from numpy import arcsin, array, cos, pi, size # yeah let's just import these functions under multiple names.  fucking super.   OH btw they shadow builtins from `math` too.  HNGGGG
 
 from kwave.data import Vector
 from kwave.kgrid import kWaveGrid
@@ -172,7 +172,12 @@ class kWaveArray(object):
         self.element_plot_colour = np.array([0, 158, 194], dtype=float) / 255
 
     def add_annular_array(self, position, radius, diameters, focus_pos):
-        assert isinstance(position, (list, tuple)), "'position' must be list or tuple"
+        #numpy arrays are forbidden, eh?  also, asserts are mostly for testing 
+        # and debugging; production code should only fail when it actually fails 
+        # not on arbitrary, unnecessary constraints
+        # fail at design/programming time, not at runtime!  runtime you log 
+        # errors noisily, but at least try to avoid kneecapping users
+        assert isinstance(position, (list, tuple)), "'position' must be list or tuple" 
         assert isinstance(radius, (int, float)), "'radius' must be an integer or float"
         assert isinstance(diameters, (list, tuple)), "'diameters' must be list or tuple"
         assert isinstance(focus_pos, (list, tuple)), "'focus_pos' must be list or tuple"
@@ -186,17 +191,17 @@ class kWaveArray(object):
         if self.dim != 3:
             raise ValueError(f"3D annular array cannot be added to an array with {self.dim}D elements.")
 
-        annular_array_num_el = size(diameters, 0)
-
+        annular_array_num_el = size(diameters, 0) # size *usually* means something else in python; 
+        #annular_array_num_el = diameters.shape[0] # this is better once we coerce diameters to a numpy array, which should happen.
         self.number_groups += 1
 
         for el_ind in range(annular_array_num_el):
             self.number_elements += 1
 
-            varphi_min = arcsin(diameters[el_ind][0] / (2 * radius))
-            varphi_max = arcsin(diameters[el_ind][1] / (2 * radius))
+            varphi_min = np.arcsin(diameters[el_ind][0] / (2 * radius))
+            varphi_max = np.arcsin(diameters[el_ind][1] / (2 * radius))
 
-            area = 2 * pi * radius**2 * (1 - cos(varphi_max)) - 2 * pi * radius**2 * (1 - cos(varphi_min))
+            area = 2 * np.pi * radius**2 * (1 - np.cos(varphi_max)) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
 
             element = Element(
                 group_id=self.number_groups,
@@ -204,11 +209,11 @@ class kWaveArray(object):
                 element_number=el_ind + 1,
                 type="annulus",
                 dim=2,
-                position=array(position),
+                position=np.array(position),
                 radius_of_curvature=radius,
                 inner_diameter=diameters[el_ind][0],
                 outer_diameter=diameters[el_ind][1],
-                focus_position=array(focus_pos),
+                focus_position=np.array(focus_pos),
                 active=True,
                 measure=area,
             )
@@ -231,21 +236,21 @@ class kWaveArray(object):
 
         self.number_elements += 1
 
-        varphi_min = arcsin(diameters[0] / (2 * radius))
-        varphi_max = arcsin(diameters[1] / (2 * radius))
+        varphi_min = np.arcsin(diameters[0] / (2 * radius))
+        varphi_max = np.arcsin(diameters[1] / (2 * radius))
 
-        area = 2 * pi * radius**2 * (1 - cos(varphi_max)) - 2 * pi * radius**2 * (1 - cos(varphi_min))
+        area = 2 * np.pi * radius**2 * (1 - np.cos(varphi_max)) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
 
         self.elements.append(
             Element(
                 group_id=0,
                 type="annulus",
                 dim=2,
-                position=array(position),
+                position=np.array(position),
                 radius_of_curvature=radius,
                 inner_diameter=diameters[0],
                 outer_diameter=diameters[1],
-                focus_position=array(focus_pos),
+                focus_position=np.array(focus_pos),
                 active=True,
                 measure=area,
             )
@@ -267,19 +272,19 @@ class kWaveArray(object):
 
         self.number_elements += 1
 
-        varphi_max = arcsin(diameter / (2 * radius))
+        varphi_max = np.arcsin(diameter / (2 * radius))
 
-        area = 2 * pi * radius**2 * (1 - cos(varphi_max))
+        area = 2 * np.pi * radius**2 * (1 - np.cos(varphi_max))
 
         self.elements.append(
             Element(
                 group_id=0,
                 type="bowl",
                 dim=2,
-                position=array(position),
+                position=np.array(position),
                 radius_of_curvature=radius,
                 diameter=diameter,
-                focus_position=array(focus_pos),
+                focus_position=np.array(focus_pos),
                 active=True,
                 measure=area,
             )
@@ -324,9 +329,9 @@ class kWaveArray(object):
         )
 
     def add_rect_element(self, position, Lx, Ly, theta):
-        assert isinstance(position, (list, tuple)), "'position' must be a list or tuple"
-        assert isinstance(Lx, (int, float)), "'Lx' must be an integer or float"
-        assert isinstance(Ly, (int, float)), "'Ly' must be an integer or float"
+        # assert isinstance(position, (list, tuple)), "'position' must be a list or tuple"
+        # assert isinstance(Lx, (int, float)), "'Lx' must be an integer or float"
+        # assert isinstance(Ly, (int, float)), "'Ly' must be an integer or float"
 
         coord_dim = len(position)
 
@@ -334,7 +339,8 @@ class kWaveArray(object):
             raise ValueError("Input position for rectangular element must be specified as a 2 (2D) or 3 (3D) element array.")
 
         if coord_dim == 3:
-            assert isinstance(theta, (Vector, list, tuple)) and len(theta) == 3, "'theta' must be a list or tuple of length 3"
+            #assert isinstance(theta, (Vector, list, tuple)) and len(theta) == 3, "'theta' must be a list or tuple of length 3"
+            if len(theta) not in [0,3]:
         else:
             assert isinstance(theta, (int, float)), "'theta' must be an integer or float"
 
@@ -353,10 +359,10 @@ class kWaveArray(object):
                 group_id=0,
                 type="rect",
                 dim=2,
-                position=array(position),
+                position=np.array(position),
                 length=Lx,
                 width=Ly,
-                orientation=array(theta) if coord_dim == 3 else theta,
+                orientation=np.array(theta) if coord_dim == 3 else theta,
                 active=True,
                 measure=area,
             )
@@ -378,7 +384,7 @@ class kWaveArray(object):
 
         self.number_elements += 1
 
-        varphi_max = arcsin(diameter / (2 * radius))
+        varphi_max = np.arcsin(diameter / (2 * radius))
 
         length = 2 * radius * varphi_max
 
@@ -387,10 +393,10 @@ class kWaveArray(object):
                 group_id=0,
                 type="arc",
                 dim=1,
-                position=array(position),
+                position=np.array(position),
                 radius_of_curvature=radius,
                 diameter=diameter,
-                focus_position=array(focus_pos),
+                focus_position=np.array(focus_pos),
                 active=True,
                 measure=length,
             )
@@ -418,16 +424,16 @@ class kWaveArray(object):
 
         self.number_elements += 1
 
-        area = pi * (diameter / 2) ** 2
+        area = np.pi * (diameter / 2) ** 2
 
         self.elements.append(
             Element(
                 group_id=0,
                 type="disc",
                 dim=2,
-                position=array(position),
+                position=np.array(position),
                 diameter=diameter,
-                focus_position=array(focus_pos),
+                focus_position=np.array(focus_pos),
                 active=True,
                 measure=area,
             )
@@ -461,15 +467,15 @@ class kWaveArray(object):
 
         self.number_elements += 1
 
-        line_length = linalg.norm(array(end_point) - array(start_point))
+        line_length = np.linalg.norm(np.array(end_point) - np.array(start_point))
 
         self.elements.append(
             Element(
                 group_id=0,
                 type="line",
                 dim=1,
-                start_point=array(start_point),
-                end_point=array(end_point),
+                start_point=np.array(start_point),
+                end_point=np.array(end_point),
                 active=True,
                 measure=line_length,
             )
