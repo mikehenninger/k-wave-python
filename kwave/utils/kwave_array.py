@@ -5,14 +5,22 @@ from math import ceil
 from typing import Optional
 
 import numpy as np
-#import numpy.linalg as linalg
-#from numpy import arcsin, array, cos, pi, size # yeah let's just import these functions under multiple names.  fucking super.   OH btw they shadow builtins from `math` too.  HNGGGG
+
+# import numpy.linalg as linalg
+# from numpy import arcsin, array, cos, pi, size # yeah let's just import these functions under multiple names.  fucking super.   OH btw they shadow builtins from `math` too.  HNGGGG
 
 from kwave.data import Vector
 from kwave.kgrid import kWaveGrid
 from kwave.utils.conversion import tol_star
 from kwave.utils.interp import get_delta_bli
-from kwave.utils.mapgen import make_cart_arc, make_cart_bowl, make_cart_disc, make_cart_rect, make_cart_spherical_segment, trim_cart_points
+from kwave.utils.mapgen import (
+    make_cart_arc,
+    make_cart_bowl,
+    make_cart_disc,
+    make_cart_rect,
+    make_cart_spherical_segment,
+    trim_cart_points,
+)
 from kwave.utils.math import make_affine, sinc
 from kwave.utils.matlab import matlab_assign, matlab_find, matlab_mask
 
@@ -72,12 +80,18 @@ class Element:
             self.orientation = np.array(self.orientation, dtype=float)
 
         if self.start_point is not None:
-            if not (isinstance(self.start_point, list) or isinstance(self.start_point, np.ndarray)):
+            if not (
+                isinstance(self.start_point, list)
+                or isinstance(self.start_point, np.ndarray)
+            ):
                 self.start_point = [self.start_point]
             self.start_point = np.array(self.start_point, dtype=float)
 
         if self.end_point is not None:
-            if not (isinstance(self.end_point, list) or isinstance(self.end_point, np.ndarray)):
+            if not (
+                isinstance(self.end_point, list)
+                or isinstance(self.end_point, np.ndarray)
+            ):
                 self.end_point = [self.end_point]
             self.end_point = np.array(self.end_point, dtype=float)
 
@@ -105,7 +119,9 @@ class Element:
                     return False
         return True
 
-    def is_approximately_equal(self, other: "Element", rtol=1e-05, atol=1e-08, equal_nan=False):
+    def is_approximately_equal(
+        self, other: "Element", rtol=1e-05, atol=1e-08, equal_nan=False
+    ):
         """
         Compares 2 Elements for approximate equality.
 
@@ -135,7 +151,9 @@ class Element:
             self_attr = getattr(self, field.name)
             other_attr = getattr(other, field.name)
             if isinstance(self_attr, (int, float, np.ndarray)):
-                if not np.allclose(self_attr, other_attr, rtol=rtol, atol=atol, equal_nan=equal_nan):
+                if not np.allclose(
+                    self_attr, other_attr, rtol=rtol, atol=atol, equal_nan=equal_nan
+                ):
                     return False
             else:
                 if self_attr != other_attr:
@@ -172,27 +190,33 @@ class kWaveArray(object):
         self.element_plot_colour = np.array([0, 158, 194], dtype=float) / 255
 
     def add_annular_array(self, position, radius, diameters, focus_pos):
-        #numpy arrays are forbidden, eh?  also, asserts are mostly for testing 
-        # and debugging; production code should only fail when it actually fails 
+        # numpy arrays are forbidden, eh?  also, asserts are mostly for testing
+        # and debugging; production code should only fail when it actually fails
         # not on arbitrary, unnecessary constraints
-        # fail at design/programming time, not at runtime!  runtime you log 
+        # fail at design/programming time, not at runtime!  runtime you log
         # errors noisily, but at least try to avoid kneecapping users
-        assert isinstance(position, (list, tuple)), "'position' must be list or tuple" 
+        assert isinstance(position, (list, tuple)), "'position' must be list or tuple"
         assert isinstance(radius, (int, float)), "'radius' must be an integer or float"
         assert isinstance(diameters, (list, tuple)), "'diameters' must be list or tuple"
         assert isinstance(focus_pos, (list, tuple)), "'focus_pos' must be list or tuple"
         assert len(position) == 3, "'position' must have 3 elements"
         assert len(focus_pos) == 3, "'focus_pos' must have 3 elements"
-        assert all(len(i) == 2 for i in diameters), "'diameters' must be a list of lists, each with 2 elements"
+        assert all(
+            len(i) == 2 for i in diameters
+        ), "'diameters' must be a list of lists, each with 2 elements"
 
         if self.number_elements == 0:
             self.dim = 3
 
         if self.dim != 3:
-            raise ValueError(f"3D annular array cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"3D annular array cannot be added to an array with {self.dim}D elements."
+            )
 
-        annular_array_num_el = size(diameters, 0) # size *usually* means something else in python; 
-        #annular_array_num_el = diameters.shape[0] # this is better once we coerce diameters to a numpy array, which should happen.
+        annular_array_num_el = size(
+            diameters, 0
+        )  # size *usually* means something else in python;
+        # annular_array_num_el = diameters.shape[0] # this is better once we coerce diameters to a numpy array, which should happen.
         self.number_groups += 1
 
         for el_ind in range(annular_array_num_el):
@@ -201,7 +225,9 @@ class kWaveArray(object):
             varphi_min = np.arcsin(diameters[el_ind][0] / (2 * radius))
             varphi_max = np.arcsin(diameters[el_ind][1] / (2 * radius))
 
-            area = 2 * np.pi * radius**2 * (1 - np.cos(varphi_max)) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
+            area = 2 * np.pi * radius**2 * (
+                1 - np.cos(varphi_max)
+            ) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
 
             element = Element(
                 group_id=self.number_groups,
@@ -232,14 +258,18 @@ class kWaveArray(object):
             self.dim = 3
 
         if self.dim != 3:
-            raise ValueError(f"3D annular array cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"3D annular array cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
         varphi_min = np.arcsin(diameters[0] / (2 * radius))
         varphi_max = np.arcsin(diameters[1] / (2 * radius))
 
-        area = 2 * np.pi * radius**2 * (1 - np.cos(varphi_max)) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
+        area = 2 * np.pi * radius**2 * (
+            1 - np.cos(varphi_max)
+        ) - 2 * np.pi * radius**2 * (1 - np.cos(varphi_min))
 
         self.elements.append(
             Element(
@@ -259,7 +289,9 @@ class kWaveArray(object):
     def add_bowl_element(self, position, radius, diameter, focus_pos):
         assert isinstance(position, (list, tuple)), "'position' must be list or tuple"
         assert isinstance(radius, (int, float)), "'radius' must be an integer or float"
-        assert isinstance(diameter, (int, float)), "'diameter' must be an integer or float"
+        assert isinstance(
+            diameter, (int, float)
+        ), "'diameter' must be an integer or float"
         assert isinstance(focus_pos, (list, tuple)), "'focus_pos' must be list or tuple"
         assert len(position) == 3, "'position' must have 3 elements"
         assert len(focus_pos) == 3, "'focus_pos' must have 3 elements"
@@ -268,7 +300,9 @@ class kWaveArray(object):
             self.dim = 3
 
         if self.dim != 3:
-            raise ValueError(f"3D bowl element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"3D bowl element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -291,8 +325,12 @@ class kWaveArray(object):
         )
 
     def add_custom_element(self, integration_points, measure, element_dim, label):
-        assert isinstance(integration_points, (np.ndarray)), "'integration_points' must be a numpy array"
-        assert isinstance(measure, (int, float)), "'measure' must be an integer or float"
+        assert isinstance(
+            integration_points, (np.ndarray)
+        ), "'integration_points' must be a numpy array"
+        assert isinstance(
+            measure, (int, float)
+        ), "'measure' must be an integer or float"
         assert isinstance(element_dim, (int)) and element_dim in [
             1,
             2,
@@ -303,7 +341,9 @@ class kWaveArray(object):
         # check the dimensionality of the integration points
         input_dim = integration_points.shape[0]
         if (input_dim < 1) or (input_dim > 3):
-            raise ValueError("Input integration_points must be a 1 x N (in 1D), 2 x N (in 2D), or 3 x N (in 3D) array.")
+            raise ValueError(
+                "Input integration_points must be a 1 x N (in 1D), 2 x N (in 2D), or 3 x N (in 3D) array."
+            )
 
         # check if this is the first element, and set the dimension
         if self.number_elements == 0:
@@ -312,7 +352,9 @@ class kWaveArray(object):
         # check that the element is being added to an array with the
         # correct dimensions
         if self.dim != input_dim:
-            raise ValueError(f"{input_dim}D custom element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"{input_dim}D custom element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -336,19 +378,23 @@ class kWaveArray(object):
         coord_dim = len(position)
 
         if coord_dim not in [2, 3]:
-            raise ValueError("Input position for rectangular element must be specified as a 2 (2D) or 3 (3D) element array.")
+            raise ValueError(
+                "Input position for rectangular element must be specified as a 2 (2D) or 3 (3D) element array."
+            )
 
-        if coord_dim == 3:
-            #assert isinstance(theta, (Vector, list, tuple)) and len(theta) == 3, "'theta' must be a list or tuple of length 3"
-            if len(theta) not in [0,3]:
-        else:
-            assert isinstance(theta, (int, float)), "'theta' must be an integer or float"
+        # if coord_dim == 3:
+        #     assert isinstance(theta, (Vector, list, tuple)) and len(theta) == 3, "'theta' must be a list or tuple of length 3"
+
+        # else:
+        #     assert isinstance(theta, (int, float)), "'theta' must be an integer or float"
 
         if self.number_elements == 0:
             self.dim = coord_dim
 
         if self.dim != coord_dim:
-            raise ValueError(f"{coord_dim}D rectangular element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"{coord_dim}D rectangular element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -369,10 +415,16 @@ class kWaveArray(object):
         )
 
     def add_arc_element(self, position, radius, diameter, focus_pos):
-        assert isinstance(position, (list, tuple, Vector)), "'position' must be list, tuple or Vector"
+        assert isinstance(
+            position, (list, tuple, Vector)
+        ), "'position' must be list, tuple or Vector"
         assert isinstance(radius, (int, float)), "'radius' must be an integer or float"
-        assert isinstance(diameter, (int, float)), "'diameter' must be an integer or float"
-        assert isinstance(focus_pos, (list, tuple, Vector)), "'focus_pos' must be list, tuple or Vector"
+        assert isinstance(
+            diameter, (int, float)
+        ), "'diameter' must be an integer or float"
+        assert isinstance(
+            focus_pos, (list, tuple, Vector)
+        ), "'focus_pos' must be list, tuple or Vector"
         assert len(position) == 2, "'position' must have 2 elements"
         assert len(focus_pos) == 2, "'focus_pos' must have 2 elements"
 
@@ -380,7 +432,9 @@ class kWaveArray(object):
             self.dim = 2
 
         if self.dim != 2:
-            raise ValueError(f"2D arc element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"2D arc element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -404,15 +458,21 @@ class kWaveArray(object):
 
     def add_disc_element(self, position, diameter, focus_pos=None):
         assert isinstance(position, (list, tuple)), "'position' must be a list or tuple"
-        assert isinstance(diameter, (int, float)), "'diameter' must be an integer or float"
+        assert isinstance(
+            diameter, (int, float)
+        ), "'diameter' must be an integer or float"
 
         coord_dim = len(position)
 
         if coord_dim not in [2, 3]:
-            raise ValueError("Input position for disc element must be specified as a 2 (2D) or 3 (3D) element array.")
+            raise ValueError(
+                "Input position for disc element must be specified as a 2 (2D) or 3 (3D) element array."
+            )
 
         if coord_dim == 3:
-            assert isinstance(focus_pos, (list, tuple)) and len(focus_pos) == 3, "'focus_pos' must be a list or tuple of length 3"
+            assert (
+                isinstance(focus_pos, (list, tuple)) and len(focus_pos) == 3
+            ), "'focus_pos' must be a list or tuple of length 3"
         else:
             focus_pos = []
 
@@ -420,7 +480,9 @@ class kWaveArray(object):
             self.dim = coord_dim
 
         if self.dim != coord_dim:
-            raise ValueError(f"{coord_dim}D disc element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"{coord_dim}D disc element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -441,29 +503,41 @@ class kWaveArray(object):
 
     def remove_element(self, element_num):
         if element_num > self.number_elements:
-            raise ValueError(f"Cannot remove element {element_num} from array with {self.number_elements} elements.")
+            raise ValueError(
+                f"Cannot remove element {element_num} from array with {self.number_elements} elements."
+            )
 
         self.elements.pop(element_num)
 
         self.number_elements -= 1
 
     def add_line_element(self, start_point, end_point):
-        assert isinstance(start_point, (list, tuple)), "'start_point' must be a list or tuple"
-        assert isinstance(end_point, (list, tuple)), "'end_point' must be a list or tuple"
+        assert isinstance(
+            start_point, (list, tuple)
+        ), "'start_point' must be a list or tuple"
+        assert isinstance(
+            end_point, (list, tuple)
+        ), "'end_point' must be a list or tuple"
 
         input_dim = len(start_point)
 
         if input_dim not in [1, 2, 3]:
-            raise ValueError("Input start_point must have 1 (in 1D), 2 (in 2D), or 3 (in 3D) elements.")
+            raise ValueError(
+                "Input start_point must have 1 (in 1D), 2 (in 2D), or 3 (in 3D) elements."
+            )
 
         if input_dim != len(end_point):
-            raise ValueError("Inputs start_point and end_point must have the same number of elements.")
+            raise ValueError(
+                "Inputs start_point and end_point must have the same number of elements."
+            )
 
         if self.number_elements == 0:
             self.dim = input_dim
 
         if self.dim != input_dim:
-            raise ValueError(f"{input_dim}D line element cannot be added to an array with {self.dim}D elements.")
+            raise ValueError(
+                f"{input_dim}D line element cannot be added to an array with {self.dim}D elements."
+            )
 
         self.number_elements += 1
 
@@ -495,12 +569,16 @@ class kWaveArray(object):
         else:
             grid_weights = np.zeros((kgrid.Nx, kgrid.Ny))
 
-        assert len(grid_weights.shape) == self.dim, "Grid weights shape must match kArray dimensions."
+        assert (
+            len(grid_weights.shape) == self.dim
+        ), "Grid weights shape must match kArray dimensions."
 
         for ind in range(self.number_elements):
             grid_weights += self.get_off_grid_points(kgrid, ind, False)
 
-        assert len(grid_weights.shape) == self.dim, "Grid weights shape must match kArray dimensions."
+        assert (
+            len(grid_weights.shape) == self.dim
+        ), "Grid weights shape must match kArray dimensions."
 
         return grid_weights
 
@@ -540,8 +618,12 @@ class kWaveArray(object):
         assert isinstance(kgrid, kWaveGrid)
         assert 0 <= element_num <= self.number_elements - 1
 
+        # XXX all those asserts and here just a blind assumption? probably log a warning
+        # (definitely don't assert unless this results in wrong waveform and not just incorrect density of off grid points)
         # compute measure (length/area/volume) in grid squares (assuming dx = dy = dz)
-        m_grid = self.elements[element_num].measure / (kgrid.dx) ** (self.elements[element_num].dim)
+        m_grid = self.elements[element_num].measure / (kgrid.dx) ** (
+            self.elements[element_num].dim
+        )
 
         # get number of integration points
         if self.elements[element_num].type == "custom":
@@ -610,7 +692,10 @@ class kWaveArray(object):
 
         elif self.elements[element_num].type == "line":
             # get distance between points in each dimension
-            d = (self.elements[element_num].end_point - self.elements[element_num].start_point) / m_integration
+            d = (
+                self.elements[element_num].end_point
+                - self.elements[element_num].start_point
+            ) / m_integration
 
             # compute a set of uniformly spaced Cartesian points
             # covering the line using linspace, where the end
@@ -652,7 +737,9 @@ class kWaveArray(object):
                 integration_points = np.array([px, py, pz])
 
         else:
-            raise ValueError(f"{self.elements[element_num].type} is not a valid array element type.")
+            raise ValueError(
+                f"{self.elements[element_num].type} is not a valid array element type."
+            )
 
         # recompute actual number of points
         m_integration = integration_points.shape[1]
@@ -662,7 +749,9 @@ class kWaveArray(object):
 
         if self.axisymmetric:
             # create new expanded grid
-            kgrid_expanded = kWaveGrid(Vector([kgrid.Nx, 2 * kgrid.Ny]), Vector([kgrid.dx, kgrid.dy]))
+            kgrid_expanded = kWaveGrid(
+                Vector([kgrid.Nx, 2 * kgrid.Ny]), Vector([kgrid.dx, kgrid.dy])
+            )
 
             # remove integration points which are outside grid
             integration_points = trim_cart_points(kgrid_expanded, integration_points)
@@ -722,7 +811,9 @@ class kWaveArray(object):
             sz_ind += 1
 
         prefixes = ["", "K", "M", "G", "T"]
-        sz_bytes = np.round(sz_bytes, 2)  # TODO: should round to significant to map matlab functionality
+        sz_bytes = np.round(
+            sz_bytes, 2
+        )  # TODO: should round to significant to map matlab functionality
         logging.log(
             logging.INFO,
             f"approximate size of source matrix: {str(sz_bytes)} {prefixes[sz_ind]} B ( {data_type} precision)",
@@ -735,14 +826,82 @@ class kWaveArray(object):
         for ind in range(self.number_elements):
             source_weights = self.get_element_grid_weights(kgrid, ind)
 
-            element_mask_ind = matlab_find(np.array(source_weights), val=0, mode="neq").squeeze(axis=-1)
+            element_mask_ind = matlab_find(
+                np.array(source_weights), val=0, mode="neq"
+            ).squeeze(axis=-1)
 
             local_ind = np.isin(mask_ind, element_mask_ind)
 
-            distributed_source_signal[local_ind] += matlab_mask(source_weights, element_mask_ind - 1) * source_signal[ind, :][None, :]
+            distributed_source_signal[local_ind] += (
+                matlab_mask(source_weights, element_mask_ind - 1)
+                * source_signal[ind, :][None, :]
+            )
 
         end_time = time.time()
-        logging.log(logging.INFO, f"total computation time : {end_time - start_time:.2f} s")
+        logging.log(
+            logging.INFO, f"total computation time : {end_time - start_time:.2f} s"
+        )
+
+        return distributed_source_signal
+
+    # XXX added by Mike Henninger, slight mod off `get_distributed_source_signal`
+    # to handle single elements at a time.
+    def get_distributed_element_signal(self, kgrid, source_signal, element_num):
+        if source_signal.ndim == 1:
+            source_signal = source_signal[np.newaxis, :]
+        start_time = time.time()
+
+        self.check_for_elements()
+
+        mask = self.get_element_binary_mask(kgrid, element_num)
+        mask_ind = matlab_find(mask).squeeze(axis=-1)
+        num_source_points = np.sum(mask)
+
+        Nt = np.shape(source_signal)[1]
+
+        if self.single_precision:
+            data_type = "float32"
+            sz_bytes = num_source_points * Nt * 4
+        else:
+            data_type = "float64"
+            sz_bytes = num_source_points * Nt * 8
+
+        sz_ind = 1
+        while sz_bytes > 1024:
+            sz_bytes = sz_bytes / 1024
+            sz_ind += 1
+
+        prefixes = ["", "K", "M", "G", "T"]
+        sz_bytes = np.round(
+            sz_bytes, 2
+        )  # TODO: should round to significant to map matlab functionality
+        logging.log(
+            logging.INFO,
+            f"approximate size of source matrix: {str(sz_bytes)} {prefixes[sz_ind]} B ( {data_type} precision)",
+        )
+
+        source_signal = source_signal.astype(data_type)
+
+        distributed_source_signal = np.zeros((num_source_points, Nt), dtype=data_type)
+
+        source_weights = self.get_element_grid_weights(kgrid, element_num)
+
+        ###### code in this block probably superfluous for this single-element function
+        element_mask_ind = matlab_find(
+            np.array(source_weights), val=0, mode="neq"
+        ).squeeze(axis=-1)
+
+        local_ind = np.isin(mask_ind, element_mask_ind)
+        ######
+        distributed_source_signal[local_ind] += (
+            matlab_mask(source_weights, element_mask_ind - 1)
+            * source_signal[0, :][None, :]
+        )
+
+        end_time = time.time()
+        logging.log(
+            logging.INFO, f"total computation time : {end_time - start_time:.2f} s"
+        )
 
         return distributed_source_signal
 
@@ -761,18 +920,25 @@ class kWaveArray(object):
         for element_num in range(self.number_elements):
             source_weights = self.get_element_grid_weights(kgrid, element_num)
 
-            element_mask_ind = matlab_find(np.array(source_weights), val=0, mode="neq").squeeze(axis=-1)
+            element_mask_ind = matlab_find(
+                np.array(source_weights), val=0, mode="neq"
+            ).squeeze(axis=-1)
 
             local_ind = np.isin(mask_ind, element_mask_ind)
 
             combined_sensor_data[element_num, :] = np.sum(
-                sensor_data[local_ind] * matlab_mask(source_weights, element_mask_ind - 1),
+                sensor_data[local_ind]
+                * matlab_mask(source_weights, element_mask_ind - 1),
                 axis=0,
             )
 
-            m_grid = self.elements[element_num].measure / (kgrid.dx) ** (self.elements[element_num].dim)
+            m_grid = self.elements[element_num].measure / (kgrid.dx) ** (
+                self.elements[element_num].dim
+            )
 
-            combined_sensor_data[element_num, :] = combined_sensor_data[element_num, :] / m_grid
+            combined_sensor_data[element_num, :] = (
+                combined_sensor_data[element_num, :] / m_grid
+            )
 
         return combined_sensor_data
 
@@ -788,12 +954,18 @@ class kWaveArray(object):
     def set_affine_transform(self, affine_transform):
         # check array has elements
         if self.number_elements == 0:
-            raise ValueError("Array must have at least one element before a transformation can be defined.")
+            raise ValueError(
+                "Array must have at least one element before a transformation can be defined."
+            )
 
         # check the input is the correct size
         sx, sy = affine_transform.shape
-        if (self.dim == 2 and (sx != 3 or sy != 3)) or (self.dim == 3 and (sx != 4 or sy != 4)):
-            raise ValueError("Affine transform must be a 3x3 matrix for arrays in 2D, and 4x4 for arrays in 3D.")
+        if (self.dim == 2 and (sx != 3 or sy != 3)) or (
+            self.dim == 3 and (sx != 4 or sy != 4)
+        ):
+            raise ValueError(
+                "Affine transform must be a 3x3 matrix for arrays in 2D, and 4x4 for arrays in 3D."
+            )
 
             # assign the transform
         self.array_transformation = affine_transform
@@ -824,7 +996,9 @@ def off_grid_points(
 
     # check dimensions of points input
     if points.shape[0] != kgrid.dim:
-        raise ValueError("Input points must be given as matrix with dimensions num_dims x num_points.")
+        raise ValueError(
+            "Input points must be given as matrix with dimensions num_dims x num_points."
+        )
 
     # get the number of off-grid points
     num_points = points.shape[1]
@@ -912,9 +1086,13 @@ def off_grid_points(
             else:
                 if kgrid.dim == 1:
                     if bli_type == "sinc":
-                        mask = mask + scale[point_ind] * sinc(pi_on_dx * (x_vec - point[0]))
+                        mask = mask + scale[point_ind] * sinc(
+                            pi_on_dx * (x_vec - point[0])
+                        )
                     elif bli_type == "exact":
-                        mask = mask + scale[point_ind] * get_delta_bli(kgrid.Nx, kgrid.dx, x_vec, point[0])
+                        mask = mask + scale[point_ind] * get_delta_bli(
+                            kgrid.Nx, kgrid.dx, x_vec, point[0]
+                        )
 
                 elif kgrid.dim == 2:
                     if bli_type == "sinc":
@@ -982,7 +1160,10 @@ def off_grid_points(
                 if kgrid.nonuniform:
                     current_mask_t = mask_t * BLIscale
 
-                updated_mask_value = matlab_mask(mask, ind - 1).squeeze(axis=-1) + scale[point_ind] * current_mask_t
+                updated_mask_value = (
+                    matlab_mask(mask, ind - 1).squeeze(axis=-1)
+                    + scale[point_ind] * current_mask_t
+                )
                 # add this contribution to the overall source mask
                 mask = matlab_assign(mask, ind - 1, updated_mask_value)
 
