@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import IntEnum
 from tempfile import gettempdir
 from typing import TYPE_CHECKING, List, Optional
 
@@ -16,7 +16,8 @@ from kwave.utils.io import get_h5_literals
 from kwave.utils.pml import get_optimal_pml_size
 
 
-class SimulationType(Enum):
+# converted to IntEnum for better serializability downstream
+class SimulationType(IntEnum):
     """
     Enum for the simulation type
 
@@ -36,7 +37,10 @@ class SimulationType(Enum):
     ELASTIC_WITH_KSPACE_CORRECTION = 4
 
     def is_elastic_simulation(self):
-        return self in [SimulationType.ELASTIC, SimulationType.ELASTIC_WITH_KSPACE_CORRECTION]
+        return self in [
+            SimulationType.ELASTIC,
+            SimulationType.ELASTIC_WITH_KSPACE_CORRECTION,
+        ]
 
     def is_axisymmetric(self):
         return self == SimulationType.AXISYMMETRIC
@@ -109,8 +113,12 @@ class SimulationOptions(object):
     radial_symmetry: str = "WSWA-FFT"
     multi_axial_PML_ratio: float = 0.1
     data_path: Optional[str] = field(default_factory=lambda: gettempdir())
-    input_filename: Optional[str] = field(default_factory=lambda: f"{get_date_string()}_kwave_input.h5")
-    output_filename: Optional[str] = field(default_factory=lambda: f"{get_date_string()}_kwave_output.h5")
+    input_filename: Optional[str] = field(
+        default_factory=lambda: f"{get_date_string()}_kwave_input.h5"
+    )
+    output_filename: Optional[str] = field(
+        default_factory=lambda: f"{get_date_string()}_kwave_output.h5"
+    )
     pml_x_alpha: Optional[float] = None
     pml_y_alpha: Optional[float] = None
     pml_z_alpha: Optional[float] = None
@@ -125,9 +133,15 @@ class SimulationOptions(object):
             "nearest",
         ], "Optional input ''cartesian_interp'' must be set to ''linear'' or ''nearest''."
 
-        assert isinstance(self.data_cast, str), "Optional input ''data_cast'' must be a string."
+        assert isinstance(
+            self.data_cast, str
+        ), "Optional input ''data_cast'' must be a string."
 
-        assert self.data_cast in ["off", "double", "single"], "Invalid input for ''data_cast''."
+        assert self.data_cast in [
+            "off",
+            "double",
+            "single",
+        ], "Invalid input for ''data_cast''."
 
         if self.data_cast == "double":
             self.data_cast = "off"
@@ -137,7 +151,8 @@ class SimulationOptions(object):
         self.hdf_compression_level = h5_literals.HDF_COMPRESSION_LEVEL
         # check value is an integer between 0 and 9
         assert (
-            isinstance(self.hdf_compression_level, int) and 0 <= self.hdf_compression_level <= 9
+            isinstance(self.hdf_compression_level, int)
+            and 0 <= self.hdf_compression_level <= 9
         ), "Optional input ''hdf_compression_level'' must be an integer between 0 and 9."
 
         assert (
@@ -171,19 +186,29 @@ class SimulationOptions(object):
 
         # automatically assign the PML size to give small prime factors
         if self.pml_auto and self.pml_inside:
-            raise NotImplementedError("''pml_size'' set to ''auto'' is only supported with ''pml_inside'' set to false.")
+            raise NotImplementedError(
+                "''pml_size'' set to ''auto'' is only supported with ''pml_inside'' set to false."
+            )
 
         if self.pml_size is not None:
             # TODO(walter): remove auto option in exchange for pml_auto=True
             if isinstance(self.pml_size, int):
                 self.pml_size = np.array([self.pml_size])
             if not isinstance(self.pml_size, (list, np.ndarray)):
-                raise ValueError("Optional input ''PMLSize'' must be a integer array of 1, 2 or 3 dimensions.")
+                raise ValueError(
+                    "Optional input ''PMLSize'' must be a integer array of 1, 2 or 3 dimensions."
+                )
 
         # Check if each member variable is None, and set it to self.pml_alpha if it is
-        self.pml_x_alpha = self.pml_alpha if self.pml_x_alpha is None else self.pml_x_alpha
-        self.pml_y_alpha = self.pml_alpha if self.pml_y_alpha is None else self.pml_y_alpha
-        self.pml_z_alpha = self.pml_alpha if self.pml_z_alpha is None else self.pml_z_alpha
+        self.pml_x_alpha = (
+            self.pml_alpha if self.pml_x_alpha is None else self.pml_x_alpha
+        )
+        self.pml_y_alpha = (
+            self.pml_alpha if self.pml_y_alpha is None else self.pml_y_alpha
+        )
+        self.pml_z_alpha = (
+            self.pml_alpha if self.pml_z_alpha is None else self.pml_z_alpha
+        )
 
         # add pathname to input and output filenames
         self.input_filename = os.path.join(self.data_path, self.input_filename)
@@ -257,9 +282,13 @@ class SimulationOptions(object):
         if options.pml_size is not None and not isinstance(options.pml_size, bool):
             if len(options.pml_size) > kgrid.dim:
                 if kgrid.dim > 1:
-                    raise ValueError(f"Optional input ''pml_size'' must be a 1 or {kgrid.dim} element numerical array.")
+                    raise ValueError(
+                        f"Optional input ''pml_size'' must be a 1 or {kgrid.dim} element numerical array."
+                    )
                 else:
-                    raise ValueError("Optional input ''pml_size'' must be a single numerical value.")
+                    raise ValueError(
+                        "Optional input ''pml_size'' must be a single numerical value."
+                    )
 
         if kgrid.dim == 1:
             options.pml_x_size = options.pml_size if options.pml_size else 20
@@ -267,15 +296,22 @@ class SimulationOptions(object):
         elif kgrid.dim == 2:
             if options.pml_size is not None:
                 if len(options.pml_size) == kgrid.dim:
-                    options.pml_x_size, options.pml_y_size = np.asarray(options.pml_size, dtype=int).ravel()
+                    options.pml_x_size, options.pml_y_size = np.asarray(
+                        options.pml_size, dtype=int
+                    ).ravel()
                 else:
-                    options.pml_x_size, options.pml_y_size = (options.pml_size[0], options.pml_size[0])
+                    options.pml_x_size, options.pml_y_size = (
+                        options.pml_size[0],
+                        options.pml_size[0],
+                    )
             else:
                 options.pml_x_size, options.pml_y_size = (20, 20)
             options.plot_scale = [-1, 1]
         elif kgrid.dim == 3:
             if (options.pml_size is not None) and (len(options.pml_size) == kgrid.dim):
-                options.pml_x_size, options.pml_y_size, options.pml_z_size = np.asarray(options.pml_size).ravel()
+                options.pml_x_size, options.pml_y_size, options.pml_z_size = np.asarray(
+                    options.pml_size
+                ).ravel()
             else:
                 if options.pml_size is None:
                     options.pml_x_size = 10
@@ -288,14 +324,20 @@ class SimulationOptions(object):
                 options.plot_scale = [-1, 1]
 
         # replace defaults with user defined values if provided and check inputs
-        if (val := options.pml_alpha) is not None and not isinstance(options.pml_alpha, str):
+        if (val := options.pml_alpha) is not None and not isinstance(
+            options.pml_alpha, str
+        ):
             # check input is correct size
             val = np.atleast_1d(val)
             if val.size > kgrid.dim:
                 if kgrid.dim > 1:
-                    raise ValueError(f"Optional input ''pml_alpha'' must be a 1 or {kgrid.dim} element numerical array.")
+                    raise ValueError(
+                        f"Optional input ''pml_alpha'' must be a 1 or {kgrid.dim} element numerical array."
+                    )
                 else:
-                    raise ValueError("Optional input ''pml_alpha'' must be a single numerical value.")
+                    raise ValueError(
+                        "Optional input ''pml_alpha'' must be a single numerical value."
+                    )
 
             # assign input based on number of dimensions
             if kgrid.dim == 1:
@@ -309,7 +351,9 @@ class SimulationOptions(object):
                 options.pml_z_alpha = val[-1]
 
         if options.save_to_disk_exit:
-            assert kgrid.dim != 1, "Optional input ''save_to_disk'' is not compatible with 1D simulations."
+            assert (
+                kgrid.dim != 1
+            ), "Optional input ''save_to_disk'' is not compatible with 1D simulations."
 
         if options.stream_to_disk:
             assert (
@@ -320,15 +364,21 @@ class SimulationOptions(object):
                 options.stream_to_disk = STREAM_TO_DISK_STEPS_DEF
 
         if options.save_to_disk or options.save_to_disk_exit:
-            assert kgrid.dim != 1, "Optional input ''save_to_disk'' is not compatible with 1D simulations."
+            assert (
+                kgrid.dim != 1
+            ), "Optional input ''save_to_disk'' is not compatible with 1D simulations."
 
         if options.use_fd:
             # input only supported in 1D fluid code
-            assert kgrid.dim == 1 and not options.simulation_type.is_elastic_simulation(), "Optional input ''use_fd'' only supported in 1D."
+            assert (
+                kgrid.dim == 1 and not options.simulation_type.is_elastic_simulation()
+            ), "Optional input ''use_fd'' only supported in 1D."
         # get optimal pml size
         if options.simulation_type.is_axisymmetric() or options.pml_auto:
             if options.simulation_type.is_axisymmetric():
-                pml_size_temp = get_optimal_pml_size(kgrid, options.pml_search_range, options.radial_symmetry[:4])
+                pml_size_temp = get_optimal_pml_size(
+                    kgrid, options.pml_search_range, options.radial_symmetry[:4]
+                )
             else:
                 pml_size_temp = get_optimal_pml_size(kgrid, options.pml_search_range)
 
