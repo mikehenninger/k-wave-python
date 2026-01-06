@@ -457,10 +457,10 @@ class kWaveArray(object):
         )
 
     def add_disc_element(self, position, diameter, focus_pos=None):
-        assert isinstance(position, (list, tuple)), "'position' must be a list or tuple"
-        assert isinstance(
-            diameter, (int, float)
-        ), "'diameter' must be an integer or float"
+        # assert isinstance(position, (list, tuple)), "'position' must be a list or tuple"
+        # assert isinstance(
+        #     diameter, (int, float)
+        # ), "'diameter' must be an integer or float"
 
         coord_dim = len(position)
 
@@ -471,8 +471,10 @@ class kWaveArray(object):
 
         if coord_dim == 3:
             assert (
-                isinstance(focus_pos, (list, tuple)) and len(focus_pos) == 3
-            ), "'focus_pos' must be a list or tuple of length 3"
+                # isinstance(focus_pos, (list, tuple)) and
+                len(focus_pos)
+                == 3
+            ), "'focus_pos' must be of length 3 in 3D simulations"
         else:
             focus_pos = []
 
